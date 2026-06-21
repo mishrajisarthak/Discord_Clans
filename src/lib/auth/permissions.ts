@@ -16,18 +16,45 @@ export async function getSyncedPermissions() {
   
   if (!profile) return null;
 
-  const roles = profile.roles || [];
+  // Fetch platform role
+  const { data: platformRole } = await supabase.from('platform_roles').select('role_type').eq('discord_user_id', profile.discord_id).maybeSingle();
+
+  const isOwner = platformRole?.role_type === 'OWNER';
+  const isAdmin = isOwner || platformRole?.role_type === 'ADMIN';
+  const isStaff = isAdmin || platformRole?.role_type === 'STAFF';
+
+  // Fetch clan role
+  let isLeader = false;
+  let isCoLeader = false;
+  let isMember = false;
+  
+  if (profile.clan_id) {
+    const { data: clanMember } = await supabase.from('clan_members').select('role').eq('user_id', session.user.id).eq('clan_id', profile.clan_id).maybeSingle();
+    if (clanMember) {
+      isMember = true;
+      if (clanMember.role === 'Leader') isLeader = true;
+      if (clanMember.role === 'Co-Leader') isCoLeader = true;
+    }
+  }
   
   return {
     userId: session.user.id,
     profile,
-    isAdmin: roles.includes('Admin'),
-    isStaff: roles.includes('Staff'),
-    isLeader: roles.includes('Leader'),
-    isCoLeader: roles.includes('Co-Leader'),
-    isMember: roles.includes('Member') || roles.includes('Leader') || roles.includes('Co-Leader'),
+    isOwner,
+    isAdmin,
+    isStaff,
+    isLeader,
+    isCoLeader,
+    isMember,
     clanId: profile.clan_id,
+    roleStr: isOwner ? 'Owner' : isAdmin ? 'Admin' : isStaff ? 'Staff' : isLeader ? 'Leader' : isCoLeader ? 'Co-Leader' : isMember ? 'Member' : 'Visitor'
   };
+}
+
+export async function requireOwner() {
+  const perms = await getSyncedPermissions();
+  if (!perms || !perms.isOwner) throw new Error('Unauthorized: Owner access required');
+  return perms;
 }
 
 export async function requireAdmin() {

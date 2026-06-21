@@ -38,11 +38,7 @@ export default function DashboardPage() {
             const data = await res.json();
             if (data.success && data.profile) {
               currentProfile = data.profile;
-              const rolesList = data.profile.roles || [];
-              if (rolesList.includes("Admin")) activeRole = "Admin";
-              else if (rolesList.includes("Staff")) activeRole = "Staff";
-              else if (rolesList.includes("Leader") || rolesList.includes("Co-Leader")) activeRole = "Leader";
-              else if (rolesList.includes("Member")) activeRole = "Member";
+              activeRole = data.permissions?.roleStr || "Visitor";
             }
           }
         } catch (e) {

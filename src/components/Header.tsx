@@ -30,12 +30,7 @@ export default function Header() {
             const data = await res.json();
             if (data.success && data.profile) {
               setProfile(data.profile);
-              const rolesList = data.profile.roles || [];
-              if (rolesList.includes("Admin")) setRole("Admin");
-              else if (rolesList.includes("Staff")) setRole("Staff");
-              else if (rolesList.includes("Leader") || rolesList.includes("Co-Leader")) setRole("Leader");
-              else if (rolesList.includes("Member")) setRole("Member");
-              else setRole("Visitor");
+              setRole(data.permissions?.roleStr || "Visitor");
               return;
             }
           }
@@ -46,12 +41,7 @@ export default function Header() {
         // Fallback
         const currentProfile = mockDb.getCurrentProfile();
         setProfile(currentProfile);
-        const rolesList = currentProfile?.roles || [];
-        if (rolesList.includes("Admin")) setRole("Admin");
-        else if (rolesList.includes("Staff")) setRole("Staff");
-        else if (rolesList.includes("Leader") || rolesList.includes("Co-Leader")) setRole("Leader");
-        else if (rolesList.includes("Member")) setRole("Member");
-        else setRole("Visitor");
+        setRole("Visitor");
       } else {
         setRole("Visitor");
         setProfile(null);
