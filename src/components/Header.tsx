@@ -71,12 +71,16 @@ export default function Header() {
     { label: "Clans", href: "/clans" },
   ];
  
-  if (role === "Member" || role === "Leader") {
-    navLinks.push({ label: "My Profile", href: "/profile" });
+  // Everyone gets Profile except Visitor
+  navLinks.push({ label: "My Profile", href: "/profile" });
+
+  if (role === "Leader" || role === "Co-Leader" || role === "Member") {
     navLinks.push({ label: "My Clan", href: "/dashboard/my-clan" });
-  } else if (role === "Staff") {
+  } 
+  if (role === "Staff" || role === "Admin" || role === "Owner") {
     navLinks.push({ label: "Staff Portal", href: "/dashboard/staff-portal" });
-  } else if (role === "Admin") {
+  } 
+  if (role === "Admin" || role === "Owner") {
     navLinks.push({ label: "Admin Panel", href: "/dashboard/admin-panel" });
   }
  

@@ -19,22 +19,26 @@ export default function Sidebar() {
  
   useEffect(() => {
     const init = async () => {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session && session.user) {
-        const currentProfile = mockDb.getCurrentProfile();
-        setProfile(currentProfile);
-        const rolesList = currentProfile?.roles || [];
-        if (rolesList.includes("Admin")) setRole("Admin");
-        else if (rolesList.includes("Staff")) setRole("Staff");
-        else if (rolesList.includes("Leader") || rolesList.includes("Co-Leader")) setRole("Leader");
-        else if (rolesList.includes("Member")) setRole("Member");
-        else setRole("Visitor");
-      } else {
-        setRole("Visitor");
-        setProfile(null);
+      try {
+        const res = await fetch("/api/auth/sync-roles", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.profile) {
+            setProfile(data.profile);
+            setRole(data.permissions?.roleStr || "Visitor");
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Sidebar role sync error:", e);
       }
+      
+      // Fallback
+      setRole("Visitor");
+      setProfile(null);
     };
     init();
   }, []);
@@ -53,12 +57,16 @@ export default function Sidebar() {
   links.push({ label: "Events", href: "/events", icon: Calendar });
   links.push({ label: "Clans", href: "/clans", icon: Users });
  
-  if (role === "Member" || role === "Leader") {
-    links.push({ label: "My Profile", href: "/profile", icon: User });
+  // Everyone gets Profile except Visitor
+  links.push({ label: "My Profile", href: "/profile", icon: User });
+
+  if (role === "Leader" || role === "Co-Leader" || role === "Member") {
     links.push({ label: "My Clan", href: "/dashboard/my-clan", icon: ShieldAlert });
-  } else if (role === "Staff") {
+  } 
+  if (role === "Staff" || role === "Admin" || role === "Owner") {
     links.push({ label: "Staff Portal", href: "/dashboard/staff-portal", icon: FileText });
-  } else if (role === "Admin") {
+  } 
+  if (role === "Admin" || role === "Owner") {
     links.push({ label: "Admin Panel", href: "/dashboard/admin-panel", icon: Settings });
   }
  
