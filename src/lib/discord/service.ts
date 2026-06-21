@@ -165,3 +165,55 @@ export async function removeClanRole(discordUserId: string) {
     }
   }
 }
+
+export async function sendDiscordNotification(
+  channelType: 'command' | 'join_request' | 'clan_logs' | 'event_logs' | 'leaderboard', 
+  embed: any
+) {
+  const supabase = await createClient();
+  const { data: settings } = await supabase.from('platform_settings').select('*').eq('id', 1).single();
+  
+  if (!settings) return false;
+
+  let channelId = null;
+  switch (channelType) {
+    case 'command': channelId = settings.command_channel_id; break;
+    case 'join_request': channelId = settings.join_request_channel_id; break;
+    case 'clan_logs': channelId = settings.clan_logs_channel_id; break;
+    case 'event_logs': channelId = settings.event_logs_channel_id; break;
+    case 'leaderboard': channelId = settings.leaderboard_channel_id; break;
+  }
+
+  if (!channelId) {
+    console.warn(`[Discord Notification] No channel configured for ${channelType}`);
+    return false;
+  }
+
+  try {
+    await discordRest.post(Routes.channelMessages(channelId), {
+      body: { embeds: [embed] }
+    });
+    return true;
+  } catch (error) {
+    console.error(`Failed to send notification to ${channelType} channel (${channelId}):`, error);
+    return false;
+  }
+}
+
+export async function createDiscordRole(name: string, color?: number) {
+  if (!GUILD_ID) throw new Error('Guild ID not configured');
+  
+  try {
+    const role: any = await discordRest.post(Routes.guildRoles(GUILD_ID), {
+      body: {
+        name,
+        color,
+        mentionable: true,
+      }
+    });
+    return role.id;
+  } catch (error) {
+    console.error(`Failed to create role ${name}:`, error);
+    throw error;
+  }
+}
