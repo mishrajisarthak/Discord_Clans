@@ -22,11 +22,19 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const init = async () => {
-      await mockDb.syncFromSupabase();
-      const current = mockDb.getCurrentProfile();
-      setProfile(current);
-      setUsername(current.username);
-      setDiscordLinked(!!current.discord_id);
+      try {
+        const res = await fetch("/api/auth/sync-roles", { method: "POST" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.profile) {
+            setProfile(data.profile);
+            setUsername(data.profile.username || "");
+            setDiscordLinked(!!data.profile.discord_id);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch profile", e);
+      }
     };
     init();
   }, []);
@@ -35,63 +43,32 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!profile) return;
 
-    const updated = await mockDb.updateProfile(profile.id, { username });
-    setProfile(updated);
-    setEditing(false);
-    confetti({
-      particleCount: 20,
-      spread: 40,
-      origin: { y: 0.8 }
-    });
+    const supabase = createClient();
+    const { error } = await supabase.from("profiles").update({ username }).eq("id", profile.id);
+    
+    if (!error) {
+      setProfile({ ...profile, username });
+      setEditing(false);
+      confetti({
+        particleCount: 20,
+        spread: 40,
+        origin: { y: 0.8 }
+      });
+    }
   };
 
   const handleLinkDiscord = async () => {
     if (!profile || discordLinked) return;
     setSyncing(true);
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    const isMock = supabaseUrl.includes("your-supabase-url") || !supabaseUrl;
-
-    if (isMock) {
-      setTimeout(async () => {
-        const updated = await mockDb.updateProfile(profile.id, {
-          discord_id: "389201948201948201",
-          discord_username: `${username.toLowerCase()}#4482`
-        });
-
-        setProfile(updated);
-        setDiscordLinked(true);
-        setSyncing(false);
-        triggerConfetti();
-
-        // Log activity
-        const clans = mockDb.getClans();
-        const currentClan = clans.find(c => c.id === updated.clan_id) || clans[clans.length - 1];
-        if (currentClan) {
-          await mockDb.addActivity(
-            currentClan.id,
-            "bot_sync",
-            "Discord Sync Completed",
-            `${updated.username} successfully linked Discord Account ${updated.discord_username}`
-          );
-
-          mockDb.triggerDiscordAnnounce(
-            currentClan.id,
-            "Discord Linkage",
-            `🔗 Gamer **${updated.username}** connected Discord Account \`${updated.discord_username}\` to Clans.gg!`
-          );
-        }
-      }, 1000);
-    } else {
-      const supabase = createClient();
-      await supabase.auth.signInWithOAuth({
-        provider: "discord",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: "identify guilds guilds.members.read"
-        }
-      });
-    }
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "discord",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: "identify guilds guilds.members.read"
+      }
+    });
   };
 
   const triggerConfetti = () => {

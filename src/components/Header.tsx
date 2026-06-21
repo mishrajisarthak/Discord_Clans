@@ -142,12 +142,14 @@ export default function Header() {
               </button>
             </Link>
  
-            <img
-              src={profile?.avatar_url}
-              alt="Avatar"
-              className="w-8 h-8 rounded-full border border-slate-800"
-              title={`${profile?.username} (${role})`}
-            />
+            <Link href="/profile">
+              <img
+                src={profile?.avatar_url}
+                alt="Avatar"
+                className="w-8 h-8 rounded-full border border-slate-800 hover:border-indigo-500 transition-colors cursor-pointer"
+                title={`${profile?.username} (${role})`}
+              />
+            </Link>
           </div>
         )}
       </div>
