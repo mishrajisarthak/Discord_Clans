@@ -5,12 +5,12 @@ import { assignClanRole, removeClanRole, sendDiscordNotification, createDiscordR
 
 export async function POST(req: Request) {
   try {
-    const signature = req.headers.get('X-Signature-Ed25519');
-    const timestamp = req.headers.get('X-Signature-Timestamp');
+    const signature = req.headers.get('X-Signature-Ed25519') || req.headers.get('x-signature-ed25519');
+    const timestamp = req.headers.get('X-Signature-Timestamp') || req.headers.get('x-signature-timestamp');
     const rawBody = await req.text();
 
     if (!signature || !timestamp) {
-      console.error('Missing signature headers');
+      console.error('Missing signature headers. Received headers:', Object.fromEntries(req.headers.entries()));
       return NextResponse.json({ error: 'Missing signature' }, { status: 401 });
     }
 
