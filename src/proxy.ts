@@ -14,6 +14,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - images, icons, webp, etc.
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/discord|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
