@@ -27,10 +27,13 @@ export async function POST(req: Request) {
     }
 
     const interaction = JSON.parse(rawBody);
+    console.log('Received Interaction. Type:', interaction.type);
 
     if (interaction.type === InteractionType.PING) {
-      console.log('Received PING from Discord');
-      return NextResponse.json({ type: InteractionResponseType.PONG });
+      console.log('Received PING from Discord, sending PONG response.');
+      const pongResponse = NextResponse.json({ type: InteractionResponseType.PONG });
+      console.log('PONG response status:', pongResponse.status);
+      return pongResponse;
     }
 
     if (interaction.type === InteractionType.APPLICATION_COMMAND) {
